@@ -3,33 +3,60 @@ import constantes
 import math
 
 class Weapon():
-    def __init__(self, image):
+    def __init__(self, image, image_bullet):
+        self.image_bullet = image_bullet
         self.image_original = image
         self.angle = 0
         self.image = pygame.transform.rotate(self.image_original, self.angle)
         self.shape = self.image.get_rect()
+        self.fired = False
+        self.last_shoot = pygame.time.get_ticks()
 
     def update(self, Player):
+        shoot_cooldown = 1000
+        bullet = None
         self.shape.center = Player.shape.center
-        if Player.flip == False:
-            self.shape.x = self.shape.x + Player.shape.width /1.5
-            self.shape.y = self.shape.y + Player.shape.height /6.5
-            self.rotate_weapon(False)
 
-        if Player.flip == True:
-            self.shape.x = self.shape.x - Player.shape.width /1.5
-            self.shape.y = self.shape.y + Player.shape.height /6.5
-            self.rotate_weapon(True)
-        
-        #mover la pistola con el mouse
+         #mover la pistola con el mouse
         mouse_pos = pygame.mouse.get_pos()
         distance_x = mouse_pos[0] - self.shape.centerx
         distance_y = -(mouse_pos[1] - self.shape.centery)
         self.angle = math.degrees(math.atan2(distance_y, distance_x))
 
-        print(self.angle)
+        if Player.flip == False:
+            self.shape.x = self.shape.x + Player.shape.width /1.5
+            self.shape.y = self.shape.y + Player.shape.height /6.5
+            self.rotate_weapon(False)
+
+            self.angle = max(-10, min(10, self.angle))
+            self.rotate_weapon(False)
+
+        if Player.flip == True:
+            self.shape.x = self.shape.x - Player.shape.width /1.5
+            self.shape.y = self.shape.y + Player.shape.height /6.5
+            if self.angle > 0:
+                self.angle = max(180 - 10, min(180 + 10, self.angle))
+            else: 
+                self.angle = max(-180 - 10, min(-180 + 10, self.angle))
+
+            self.rotate_weapon(True)
+        #print(self.angle)
         
+        #detectar los clicks del mouse
+        if pygame.mouse.get_pressed()[0] and self.fired == False and (pygame.time.get_ticks() - self.last_shoot >= shoot_cooldown):
+            bullet = Bullet(self.image_bullet, self.shape.centerx, self.shape.centery, self.angle)
+            self.fired = True
+            self.last_shoot = pygame.time.get_ticks()
+
+        #resetear el click del mouse
+        if pygame.mouse.get_pressed()[0] == False:
+            self.fired = False
+
+        return bullet
+        
+
     def rotate_weapon(self, rotate):
+
         if rotate == True:
             image_flip = pygame.transform.flip(self.image_original,
                                                True, False)
@@ -44,5 +71,20 @@ class Weapon():
         self.image = pygame.transform.rotate(self.image, self.angle)
         interface.blit(self.image, self.shape)
         #pygame.draw.rect(interface, constantes.COLOR_GUN, self.shape, 1)
+    
+    
+class Bullet(pygame.sprite.Sprite):
+    
+    def __init__(self, image, x, y, angle):
+        pygame.sprite.Sprite.__init__(self)
+        self.image_original = image
+        self.angle = angle
+        self.imageB = pygame.transform.rotate(self.image_original, self.angle)
+        self.rect = self.imageB.get_rect()
+        self.rect.center = (x, y)
+
+    def draw(self, interface):
+        interface.blit(self.imageB, (self.rect.centerx,
+                                    self.rect.centery -  int(self.imageB.get_height()/2)))
     
     
