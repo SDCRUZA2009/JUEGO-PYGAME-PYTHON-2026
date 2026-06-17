@@ -27,11 +27,18 @@ for i in range (4):
 image_gun = pygame.image.load(f"assets//images//weapons//gun.png").convert_alpha()
 image_gun = escalar_img(image_gun, constantes.SCALA_GUN)
 
+#balas
+image_bullet = pygame.image.load(f"assets//images//weapons//Bullet.png").convert_alpha()
+image_bullet = escalar_img(image_bullet, constantes.SCALA_GUN)
+
 #crear un jugador de la clase personaje
 player = Player(40, 40, animaciones)
 
 #crear un arma de la clase weapon
-gun = Weapon(image_gun)
+gun = Weapon(image_gun, image_bullet)
+
+#crear un grupo de sprites
+group_bullet = pygame.sprite.Group()
 
 #definir las variables de movimiento del jugador
 move_up = False
@@ -69,13 +76,20 @@ while run:
     player.update()
 
     #actualizar el estado del arma
-    gun.update(player)
+    bullet = gun.update(player)
+    if bullet:
+        group_bullet.add(bullet)
+    print(group_bullet)
 
     #dibujar el jugador
     player.draw(window)
 
     #dibujar el arma
     gun.draw(window)
+
+    #dibujar las balas
+    for bullet in group_bullet:
+        bullet.draw(window)
 
 
 
