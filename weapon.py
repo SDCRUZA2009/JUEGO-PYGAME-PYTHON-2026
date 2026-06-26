@@ -1,6 +1,7 @@
 import pygame
 import constantes
 import math
+import random
 
 class Weapon():
     def __init__(self, image, image_bullet):
@@ -13,7 +14,7 @@ class Weapon():
         self.last_shoot = pygame.time.get_ticks()
 
     def update(self, Player):
-        shoot_cooldown = 1000
+        shoot_cooldown = constantes.SHOOT_COOLDOWN
         bullet = None
         self.shape.center = Player.shape.center
 
@@ -82,9 +83,25 @@ class Bullet(pygame.sprite.Sprite):
         self.imageB = pygame.transform.rotate(self.image_original, self.angle)
         self.rect = self.imageB.get_rect()
         self.rect.center = (x, y)
+        #CALCULAR LA VELOCIDAD
+        self.delta_x = math.cos(math.radians(self.angle))*constantes.VELOCIDAD_BULLET
+        self.delta_y = -math.sin(math.radians(self.angle))*constantes.VELOCIDAD_BULLET
+
+    def update(self, list_enemies):
+        self.rect.x = self.rect.x + self.delta_x
+        self.rect.y  = self.rect.y + self.delta_y
+        #vwer si las balas salen de pantalla
+        if self.rect.right < 0 or self.rect.left > constantes.WIDTH_WINDOW or self.rect.bottom < 0 or self.rect.top > constantes.HEIGHT_WINDOW:
+            self.kill()
+
+        #verificar si hay colision con enemigos
+        for enemie in list_enemies:
+            if enemie.shape.colliderect(self.rect):
+                damage = 15 + random.randint(-7, 7)
+                enemie.energy = enemie.energy - damage
+                self.kill()
+                break
 
     def draw(self, interface):
         interface.blit(self.imageB, (self.rect.centerx,
                                     self.rect.centery -  int(self.imageB.get_height()/2)))
-    
-    
