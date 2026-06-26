@@ -2,6 +2,28 @@ import pygame
 import constantes
 from personaje import Player
 from weapon import Weapon 
+import os
+
+
+#FUNCIONES:
+#ESCALAR IMAGENES
+def escalar_img(image, scale):
+    w = image.get_width()
+    h = image.get_height()
+    nueva_imagen = pygame.transform.scale(image, (w*scale, h*scale))
+    return nueva_imagen
+
+#FUNCION PARA CONTAR ELEMENTOS
+def count_elements(directory):
+    return len(os.listdir(directory))
+#print(count_elements("assets//images//characters//enemies"))
+#print(os.listdir("assets//images//characters//enemies"))
+
+#FUNCION LISTAR NOMBRES ELEMENTOS
+def name_files(directory):
+    return os.listdir(directory)
+#print(name_file("assets//images//characters//enemies"))
+
 
 pygame.init()
 
@@ -9,20 +31,37 @@ window = pygame.display.set_mode((constantes.WIDTH_WINDOW,
                                    constantes.HEIGHT_WINDOW))
 pygame.display.set_caption("Mi Juego")
 
-def escalar_img(image, scale):
-    w = image.get_width()
-    h = image.get_height()
-    nueva_imagen = pygame.transform.scale(image, (w*scale, h*scale))
-    return nueva_imagen
-
 #importar imagenes
 #Personaje
-animaciones = []
+animations = []
 for i in range (4):
     img = player_image = pygame.image.load(f"assets//images//characters//player//Player_{i}.png").convert_alpha()
     img = escalar_img(img, constantes.SCALA_PLAYER)
-    animaciones.append(img)
+    animations.append(img)
 
+#enemigos
+directory_enemies = "assets//images//characters//enemies"
+type_enemies = name_files(directory_enemies)
+#print(f"enemies: {type_enemies}")
+animations_enemies = {}
+for eni in type_enemies:
+    list_temp = []
+    rout_temp = f"assets//images//characters//enemies//{eni}"
+    print(f"archivos reales en {eni}: {os.listdir(rout_temp)}")
+    archivos = os.listdir(rout_temp)
+    imagenes = [f for f in archivos if f.endswith(".png") or f.endswith(".jpg")]
+    #print(animations_enemies)
+    try:
+        imagenes.sort(key=lambda f: int("".join(filter(str.isdigit, f)) or 0))
+    except Exception:
+        imagenes.sort()
+    for nombre_archivo in imagenes:
+        ruta_completa = os.path.join(rout_temp, nombre_archivo)
+        img_enemie = pygame.image.load(ruta_completa).convert_alpha()
+        img_enemie = escalar_img(img_enemie, constantes.SCALA_ENEMIES)
+        list_temp.append(img_enemie)
+    
+    animations_enemies[eni] = list_temp
 #arma
 image_gun = pygame.image.load(f"assets//images//weapons//gun.png").convert_alpha()
 image_gun = escalar_img(image_gun, constantes.SCALA_GUN)
@@ -32,7 +71,23 @@ image_bullet = pygame.image.load(f"assets//images//weapons//Bullet.png").convert
 image_bullet = escalar_img(image_bullet, constantes.SCALA_GUN)
 
 #crear un jugador de la clase personaje
-player = Player(40, 40, animaciones)
+player = Player(40, 40, animations, 100)
+
+#crear un enemigo de la clase personaje
+the_dark_soul= Player(150, 200, animations_enemies["the_dark_soul"], 100)
+skeleton_blue= Player(100, 200, animations_enemies["skeleton_blue"], 100)
+golem_blue = Player(200, 200, animations_enemies["golem_blue"], 100)
+golem_verde = Player(250, 200, animations_enemies["golem_verde"], 100)
+golem_cafe= Player(300, 200, animations_enemies["golem_cafe"], 100)
+
+#CRER LISTA DE ENEMIGOS
+list_enemies = []
+list_enemies.append(the_dark_soul)
+list_enemies.append(skeleton_blue)
+list_enemies.append(golem_blue)
+list_enemies.append(golem_verde)
+list_enemies.append(golem_cafe)
+#print(list_enemies)
 
 #crear un arma de la clase weapon
 gun = Weapon(image_gun, image_bullet)
@@ -75,14 +130,25 @@ while run:
     #actualizar el estado del jugador
     player.update()
 
+    #actualizar el estdo del enemigo
+    for ene in list_enemies:
+        ene.update()
+        print(ene.energy)
+
     #actualizar el estado del arma
     bullet = gun.update(player)
     if bullet:
         group_bullet.add(bullet)
-    print(group_bullet)
+    for bullet in group_bullet:
+        bullet.update(list_enemies)
+    #print(group_bullet)
 
     #dibujar el jugador
     player.draw(window)
+
+    #dibujar a los enemigos
+    for ene in list_enemies:
+        ene.draw(window)
 
     #dibujar el arma
     gun.draw(window)
@@ -90,8 +156,6 @@ while run:
     #dibujar las balas
     for bullet in group_bullet:
         bullet.draw(window)
-
-
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
